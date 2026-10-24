@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Apex Sci-Calc | Cyber Edition</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600;700&family=Plus+Jakarta+Sans:wght@500;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #0b0f19;
+      --card-bg: rgba(18, 26, 45, 0.65);
+      --card-border: rgba(255, 255, 255, 0.08);
+      --glow-blue: #00d2ff;
+      --glow-purple: #9d4edd;
+      --btn-default: rgba(255, 255, 255, 0.04);
+      --btn-hover: rgba(255, 255, 255, 0.1);
+      --btn-sci: rgba(0, 210, 255, 0.08);
+      --btn-sci-hover: rgba(0, 210, 255, 0.18);
+      --btn-op: rgba(157, 78, 221, 0.15);
+      --btn-op-hover: rgba(157, 78, 221, 0.3);
+      --text-main: #f8fafc;
+      --text-muted: #64748b;
+      --accent: #00f2fe;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      user-select: none;
+    }
+
+    body {
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: var(--bg);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      overflow-x: hidden;
+      position: relative;
+      padding: 24px;
+    }
+
+    /* Ambient Background Glows */
+    .blob {
+      position: absolute;
+      border-radius: 50%;
+      filter: blur(100px);
+      z-index: 0;
+      pointer-events: none;
+      opacity: 0.45;
+    }
+    .blob-1 {
+      width: 380px;
+      height: 380px;
+      background: #7928ca;
+      top: 10%;
+      left: 15%;
+      animation: float 14s infinite alternate ease-in-out;
+    }
+    .blob-2 {
+      width: 420px;
+      height: 420px;
+      background: #0070f3;
+      bottom: 10%;
+      right: 15%;
+      animation: float 18s infinite alternate-reverse ease-in-out;
+    }
+
+    @keyframes float {
+      0% { transform: translate(0, 0) scale(1); }
+      100% { transform: translate(40px, -40px) scale(1.1); }
+    }
+
+    /* Calculator Shell */
+    .calculator-card {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      max-width: 500px;
+      background: var(--card-bg);
+      backdrop-filter: blur(24px);
+      -webkit-backdrop-filter: blur(24px);
+      border: 1px solid var(--card-border);
+      border-radius: 28px;
+      padding: 28px;
+      box-shadow: 0 30px 60px rgba(0, 0, 0, 0.6),
+                  inset 0 1px 0 rgba(255, 255, 255, 0.1);
+    }
+
+    /* Top Bar & Toggles */
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    .logo {
+      font-weight: 700;
+      font-size: 0.95rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .logo::before {
+      content: '';
+      display: inline-block;
+      width: 8px;
+      height: 8px;
+      border-radius: 50%;
+      background: #00f2fe;
+      box-shadow: 0 0 10px #00f2fe;
+    }
+    .mode-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.75rem;
+      padding: 4px 10px;
+      border-radius: 20px;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      color: var(--accent);
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .mode-badge:hover {
+      background: rgba(0, 242, 254, 0.15);
+      border-color: var(--accent);
+    }
+
+    /* Display Section */
+    .screen {
+      background: rgba(8, 12, 22, 0.6);
+      border-radius: 18px;
+      padding: 16px 20px;
+      margin-bottom: 22px;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+      display: flex;
+      flex-direction: column;
+      justify-content: flex-end;
+      min-height: 110px;
+      box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.4);
+    }
+    .expression {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-muted);
+      font-size: 0.95rem;
+      text-align: right;
+      min-height: 24px;
+      overflow-x: auto;
+      white-space: nowrap;
+      margin-bottom: 6px;
+    }
+    .expression::-webkit-scrollbar { display: none; }
+    .result {
+      font-family: 'JetBrains Mono', monospace;
+      color: var(--text-main);
+      font-size: 2.3rem;
+      font-weight: 700;
+      text-align: right;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .result::-webkit-scrollbar { display: none; }
+
+    /* Button Grid */
+    .pad {
+      display: grid;
+      grid-template-columns: repeat(5, 1fr);
+      gap: 10px;
+    }
+
+    button {
+      border: none;
+      outline: none;
+      background: var(--btn-default);
+      color: var(--text-main);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 1.05rem;
+      padding: 14px 0;
+      border-radius: 14px;
+      cursor: pointer;
+      transition: all 0.15s ease;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border: 1px solid rgba(255, 255, 255, 0.04);
+    }
+
+    button:hover {
+      background: var(--btn-hover);
+      border-color: rgba(255, 255, 255, 0.15);
+      transform: translateY(-2px);
+    }
+
+    button:active {
+      transform: translateY(1px) scale(0.98);
+    }
+
+    /* Category-specific button colors */
+    button.sci {
+      background: var(--btn-sci);
+      color: #7dd3fc;
+      font-size: 0.9rem;
+      border-color: rgba(0, 210, 255, 0.1);
+    }
+    button.sci:hover {
+      background: var(--btn-sci-hover);
+      border-color: rgba(0, 210, 255, 0.3);
+      box-shadow: 0 0 15px rgba(0, 210, 255, 0.2);
+    }
+
+    button.op {
+      background: var(--btn-op);
+      color: #e879f9;
+      border-color: rgba(157, 78, 221, 0.2);
+    }
+    button.op:hover {
+      background: var(--btn-op-hover);
+      border-color: rgba(157, 78, 221, 0.4);
+      box-shadow: 0 0 15px rgba(157, 78, 221, 0.3);
+    }
+
+    button.clear {
+      background: rgba(239, 68, 68, 0.12);
+      color: #f87171;
+      border-color: rgba(239, 68, 68, 0.2);
+    }
+    button.clear:hover {
+      background: rgba(239, 68, 68, 0.25);
+      box-shadow: 0 0 15px rgba(239, 68, 68, 0.25);
+    }
+
+    button.equal {
+      grid-column: span 2;
+      background: linear-gradient(135deg, #00f2fe, #4facfe);
+      color: #0b0f19;
+      font-weight: 700;
+      border: none;
+      box-shadow: 0 4px 18px rgba(0, 242, 254, 0.35);
+    }
+    button.equal:hover {
+      box-shadow: 0 6px 24px rgba(0, 242, 254, 0.55);
+      filter: brightness(1.1);
+    }
+
+    @media (max-width: 480px) {
+      .calculator-card {
+        padding: 20px;
+        border-radius: 22px;
+      }
+      .pad {
+        gap: 7px;
+      }
+      button {
+        padding: 12px 0;
+        font-size: 0.95rem;
+        border-radius: 10px;
+      }
+      .result {
+        font-size: 1.8rem;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <div class="blob blob-1"></div>
+  <div class="blob blob-2"></div>
+
+  <div class="calculator-card">
+    <div class="card-header">
+      <div class="logo">KINETIC // 01</div>
+      <div class="mode-badge" id="angle-toggle" onclick="toggleAngle()">DEG</div>
+    </div>
+
+    <div class="screen">
+      <div class="expression" id="expr"></div>
+      <div class="result" id="res">0</div>
+    </div>
+
+    <div class="pad">
+      <!-- Row 1 -->
+      <button class="sci" onclick="insertFunc('sin')">sin</button>
+      <button class="sci" onclick="insertFunc('cos')">cos</button>
+      <button class="sci" onclick="insertFunc('tan')">tan</button>
+      <button class="clear" onclick="clearAll()">AC</button>
+      <button class="clear" onclick="deleteChar()">DEL</button>
+
+      <!-- Row 2 -->
+      <button class="sci" onclick="insertFunc('ln')">ln</button>
+      <button class="sci" onclick="insertFunc('log')">log</button>
+      <button class="sci" onclick="insert('(')">(</button>
+      <button class="sci" onclick="insert(')')">)</button>
+      <button class="op" onclick="insert('^')">^</button>
+
+      <!-- Row 3 -->
+      <button class="sci" onclick="insertFunc('sqrt')">√</button>
+      <button onclick="insert('7')">7</button>
+      <button onclick="insert('8')">8</button>
+      <button onclick="insert('9')">9</button>
+      <button class="op" onclick="insert('/')">÷</button>
+
+      <!-- Row 4 -->
+      <button class="sci" onclick="insert('!')">x!</button>
+      <button onclick="insert('4')">4</button>
+      <button onclick="insert('5')">5</button>
+      <button onclick="insert('6')">6</button>
+      <button class="op" onclick="insert('*')">×</button>
+
+      <!-- Row 5 -->
+      <button class="sci" onclick="insert('π')">π</button>
+      <button onclick="insert('1')">1</button>
+      <button onclick="insert('2')">2</button>
+      <button onclick="insert('3')">3</button>
+      <button class="op" onclick="insert('-')">−</button>
+
+      <!-- Row 6 -->
+      <button class="sci" onclick="insert('e')">e</button>
+      <button onclick="insert('0')">0</button>
+      <button onclick="insert('.')">.</button>
+      <button class="op" onclick="insert('+')">+</button>
+      <button class="op" onclick="insert('%')">%</button>
+
+      <!-- Row 7 -->
+      <button class="sci" onclick="insert('inv')">1/x</button>
+      <button class="sci" onclick="toggleSign()">±</button>
+      <button class="equal" onclick="compute()">=</button>
+    </div>
+  </div>
+
+  <script>
+    let rawExpr = "";
+    let isDegree = true;
+
+    const exprDisplay = document.getElementById("expr");
+    const resDisplay = document.getElementById("res");
+    const angleToggle = document.getElementById("angle-toggle");
+
+    function updateDisplay() {
+      exprDisplay.innerText = rawExpr
+        .replace(/\*/g, ' × ')
+        .replace(/\//g, ' ÷ ')
+        .replace(/\+/g, ' + ')
+        .replace(/-/g, ' − ');
+      if (rawExpr === "") {
+        resDisplay.innerText = "0";
+      }
+    }
+
+    function insert(val) {
+      if (val === 'inv') {
+        rawExpr = `(1/(${rawExpr || 1}))`;
+      } else {
+        rawExpr += val;
+      }
+      updateDisplay();
+    }
+
+    function insertFunc(fn) {
+      rawExpr += `${fn}(`;
+      updateDisplay();
+    }
+
+    function clearAll() {
+      rawExpr = "";
+      exprDisplay.innerText = "";
+      resDisplay.innerText = "0";
+    }
+
+    function deleteChar() {
+      rawExpr = rawExpr.slice(0, -1);
+      updateDisplay();
+    }
+
+    function toggleSign() {
+      if (!rawExpr) return;
+      if (rawExpr.startsWith("-")) {
+        rawExpr = rawExpr.slice(1);
+      } else {
+        rawExpr = "-" + rawExpr;
+      }
+      updateDisplay();
+    }
+
+    function toggleAngle() {
+      isDegree = !isDegree;
+      angleToggle.innerText = isDegree ? "DEG" : "RAD";
+    }
+
+    function factorial(n) {
+      if (n < 0) return NaN;
+      if (n === 0 || n === 1) return 1;
+      let res = 1;
+      for (let i = 2; i <= n; i++) res *= i;
+      return res;
+    }
+
+    function compute() {
+      if (!rawExpr) return;
+
+      try {
+        let parsed = rawExpr;
+
+        // Constants
+        parsed = parsed.replace(/π/g, 'Math.PI');
+        parsed = parsed.replace(/e/g, 'Math.E');
+
+        // Powers
+        parsed = parsed.replace(/\^/g, '**');
+
+        // Percentages
+        parsed = parsed.replace(/(\d+(\.\d+)?)%/g, '($1/100)');
+
+        // Factorials (e.g., 5!)
+        parsed = parsed.replace(/(\d+)!/g, 'factorial($1)');
+
+        // Trig Functions (handle DEG / RAD)
+        parsed = parsed.replace(/sin\(([^)]+)\)/g, (_, val) => {
+          return isDegree ? `Math.sin((${val}) * Math.PI / 180)` : `Math.sin(${val})`;
+        });
+        parsed = parsed.replace(/cos\(([^)]+)\)/g, (_, val) => {
+          return isDegree ? `Math.cos((${val}) * Math.PI / 180)` : `Math.cos(${val})`;
+        });
+        parsed = parsed.replace(/tan\(([^)]+)\)/g, (_, val) => {
+          return isDegree ? `Math.tan((${val}) * Math.PI / 180)` : `Math.tan(${val})`;
+        });
+
+        // Other Math funcs
+        parsed = parsed.replace(/log\(/g, 'Math.log10(');
+        parsed = parsed.replace(/ln\(/g, 'Math.log(');
+        parsed = parsed.replace(/sqrt\(/g, 'Math.sqrt(');
+
+        let finalVal = Function(`'use strict'; return (${parsed})`)();
+
+        if (typeof finalVal === 'number' && !Number.isInteger(finalVal)) {
+          finalVal = Number(finalVal.toFixed(8));
+        }
+
+        resDisplay.innerText = finalVal;
+      } catch (err) {
+        resDisplay.innerText = "Error";
+      }
+    }
+
+    // Keyboard support
+    window.addEventListener("keydown", (e) => {
+      if (!isNaN(e.key) || ['+', '-', '*', '/', '.', '(', ')', '^', '%'].includes(e.key)) {
+        insert(e.key);
+      } else if (e.key === "Enter" || e.key === "=") {
+        compute();
+      } else if (e.key === "Backspace") {
+        deleteChar();
+      } else if (e.key.toLowerCase() === "c" || e.key === "Escape") {
+        clearAll();
+      }
+    });
+  </script>
+</body>
+</html>
